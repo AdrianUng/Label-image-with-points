@@ -26,6 +26,7 @@ In order to completely clear the list of landmarks 'q' is pressed.
 **Future improvements:**
 
 [ ] rotate the image by pressing 'r' and allow the placing of landmarks at the **(x,y)** coordinates regardless of the image orientation
+
 [ ] change the landmark placing order in order to facilitate the more accurately align the points **#3** to **#6**
 
 
