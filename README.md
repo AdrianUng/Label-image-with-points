@@ -1,12 +1,12 @@
 This script is based on a previous post from PyImage Search: https://www.pyimagesearch.com/2015/03/09/capturing-mouse-click-events-with-python-and-opencv/
 
-**Packages used** with this script:
+**Packages used:**
 - OpenCV version 3.4.0
 - Numpy
 - Matplotlib
 - xml.etree.ElementTree 
 
-**General description**
+**General description:**
 
 Script used to label an image with a finite number of landmarks. The output is an XML script containing the (x,y) coordinates of the points.
 
@@ -23,7 +23,7 @@ In order to aid the consistent placing of landmarks in a context where this task
 
 In order to completely clear the list of landmarks 'q' is pressed.
 
-Future improvements:
+**Future improvements:**
 
 [ ] rotate the image by pressing 'r' and allow the placing of landmarks at the **(x,y)** coordinates regardless of the image orientation
 [ ] change the landmark placing order in order to facilitate the more accurately align the points **#3** to **#6**
