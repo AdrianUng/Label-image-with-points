@@ -33,6 +33,10 @@ In order to completely clear the list of landmarks 'q' is pressed.
 
 [ ] change the landmark placing order in order to facilitate the more accurately alignment of the points **#3** to **#6**
 
+[ ] stop the algorithm from exporthing the XML if the list storing the points is empty
+
+[ ] stop the algorithm from poping the list if it is already empty
+
 
 
 
