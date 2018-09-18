@@ -62,8 +62,8 @@ def overlap_image_labels(image,stored_xy):
 stored_xy=[]
 point_count=0
 
-folder_source = 'New Folder\\' # location of images to be labeled
-output_folder = 'New Folder\\' # where to store the labels 
+folder_source = 'images\\' # location of images to be labeled
+output_folder = 'images\\' # where to store the labels 
 
 global_image_list=glob.glob(folder_source+'*.png') # Generating the list of images to be labeled
 # change the '.jpg' extension if other image types are used...
