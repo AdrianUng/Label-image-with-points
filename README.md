@@ -6,6 +6,8 @@ This script is based on a previous post from PyImage Search. You can access the 
 - Matplotlib version 1.4.3
 - xml
 
+### Script running on Windows, so paths to folders contain '\\' instead of '/' ###
+
 ## General description:
 
 Script used to label an image with a finite number of landmarks. The output is an XML script containing the (x,y) coordinates of the points.
