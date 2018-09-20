@@ -1,3 +1,4 @@
+![](https://github.com/AdrianUng/place_labels/blob/master/repo_snap2.png)
 This script is based on a previous post from PyImage Search. You can access the original tutorial here: https://www.pyimagesearch.com/2015/03/09/capturing-mouse-click-events-with-python-and-opencv/
 
 ## Packages used:
