@@ -8,41 +8,13 @@ Adapted code from source: https://www.pyimagesearch.com/2015/03/09/capturing-mou
 import cv2
 import numpy as np
 import pandas as pd
-import xml.etree.ElementTree as ET
 import os
 import tkinter as tk
 from PIL import Image, ImageTk
 from pathlib import Path
 
 
-def camera_coord_export_as_XML_v3(file_name, landmarks_xy, output_folder):
-    ''' landmarks_xy needs to be an np.array of shape 2xn, where n = Nr of points '''
-    new_root = ET.Element("leap_coordinates")
-
-    img_name = ET.SubElement(new_root, "img_name")
-    img_name.text = file_name
-
-    nr_points = np.size(landmarks_xy, 1)
-    finger_joints = ET.SubElement(new_root, "finger_joints", ptCount=str(nr_points))
-
-    for i in range(0, nr_points):
-        point_nr = "joint%d" % (i + 1)
-        ET.SubElement(finger_joints, point_nr, x=str(landmarks_xy[0, i]), y=str(landmarks_xy[1, i]))
-    tree = ET.ElementTree(new_root)
-    tree.write(output_folder + file_name + '.xml')  # wrap it in an ElementTree instance, and save as XML
-    print('XMLs created')
-    return None
-
-
-def overlap_image_labels(image, stored_xy):
-    overlapped_im = image
-    for point in stored_xy:
-        overlapped_im[point[1] - 10:point[1] + 10, point[0] - 10:point[0] + 10, 0] = 255
-        overlapped_im[point[1] - 10:point[1] + 10, point[0] - 10:point[0] + 10, 1] = 0
-        overlapped_im[point[1] - 10:point[1] + 10, point[0] - 10:point[0] + 10, 2] = 255
-    return overlapped_im
-
-
+# save dictionary created after each folder is analyzed to a csv
 def save_csv(dictionary, save_path):
     df = pd.DataFrame(dictionary)
     df.to_csv(save_path)
@@ -61,7 +33,7 @@ def compare_labels(label_names, stored_labels):
 
 class ImageLandmarks:
     def __init__(self, source_folder, label_names, output_folder=None, image_type=None, toplevel=False,
-                 save_xml=False, thickness=10, image_size=400):
+                 thickness=10, image_size=400):
 
         # default thickness
         self.thickness = thickness
@@ -93,8 +65,6 @@ class ImageLandmarks:
             self.window = tk.Tk()
         else:
             self.window = tk.Toplevel()
-
-        self.save_xml = save_xml
 
         self.label_names = label_names
 
@@ -158,6 +128,7 @@ class ImageLandmarks:
                 self.stored_xy[self.label_names[self.radio_int.get()]] = event.x, event.y
                 self.radio_int.set(self.radio_int.get() + 1)
                 print(self.stored_xy)
+            #     exception for if it was last point and no label is selected, assumes labelling is complete
             except IndexError:
                 self.next_button()
 
@@ -200,6 +171,6 @@ class ImageLandmarks:
             self.window.quit()
 
 
-if __name__ == "__main__":
-    ImageLandmarks(source_folder="/Users/brandonhastings/Desktop/modified_images/image/original/VIS/20210624/modified",
-                   label_names=["left eye", "right eye", "neck"])
+# if __name__ == "__main__":
+#     ImageLandmarks(source_folder="/Users/brandonhastings/Desktop/modified_images/image/original/VIS/20210624/modified",
+#                    label_names=["left eye", "right eye", "neck"])
