@@ -1,145 +1,207 @@
-
 """
 Created on Wed Aug 22 15:39:58 2018
 
 Adapted code from source: https://www.pyimagesearch.com/2015/03/09/capturing-mouse-click-events-with-python-and-opencv/
 
 @author: adrian ungureanu
+
+Updated on Fri Oct 13 13:55:22 2023
+@author: Brandon Hastings
 """
-import cv2,glob,numpy as np
-import xml.etree.ElementTree as ET
-from matplotlib import pyplot as plt
+import cv2
+import rawpy
+import numpy as np
+import pandas as pd
+import os
+import tkinter as tk
+from PIL import Image, ImageTk
+from pathlib import Path
 
-def camera_coord_export_as_XML_v3(file_name,finger_joints_xy,output_folder):
-    ''' finger_joints_xy needs to be an np.array of shape 2xn, where n = Nr of points '''
-    new_root = ET.Element("leap_coordinates")
 
-    img_name=ET.SubElement(new_root,"img_name")
-    img_name.text=file_name
+# save dictionary created after each folder is analyzed to a csv
+def save_csv(dictionary, save_path):
+    df = pd.DataFrame(dictionary).T
+    df.index.name = "image path"
+    df.to_csv(Path(os.path.join(save_path, "labeled_points.csv")))
 
-    nr_points=np.size(finger_joints_xy,1)
-    finger_joints=ET.SubElement(new_root,"finger_joints", ptCount=str(nr_points))
 
-    for i in range(0,nr_points):
-        point_nr="joint%d" % (i+1)        
-        ET.SubElement(finger_joints,point_nr, x=str(finger_joints_xy[0,i]), y=str(finger_joints_xy[1,i]))
-    tree = ET.ElementTree(new_root)
-    tree.write(output_folder+file_name+'.xml')# wrap it in an ElementTree instance, and save as XML
-    print('XMLs created')
-    return None
+def compare_labels(label_names, stored_labels):
+    # also remove oval_id from dictionary values, leaving only tuple of coordinate points
+    for i in stored_labels.keys():
+        stored_labels[i] = stored_labels[i][0]
+    # get keys from label_names that are not in stored_xy keys (skipped labels) and input nan value
+    unlabelled_values = list(set(label_names) - set(stored_labels.keys()))
+    for i in unlabelled_values:
+        stored_labels[i] = np.nan
+    return dict(sorted(stored_labels.items()))
 
-def click_and_crop(event, x, y, flags, param):
-    # grab references to the global variables
-    global  point_count,width,length# cropping,refPt,
 
-    if event == cv2.EVENT_LBUTTONDOWN:
-        if point_count==6:
-            pass
+class ImageLandmarks:
+    def __init__(self, source_folder, label_names, output_folder=None, image_type=None, toplevel=False,
+                 thickness=10, image_size=400):
+
+        # default thickness
+        self.thickness = thickness
+        # default image resize
+        self.image_size = image_size
+        # determine image type
+        if image_type is not None:
+            self.image_type = image_type
+        elif image_type is None:
+            self.image_type = ".png"
+
+        # determine if the input file is a folder or single file
+        if os.path.isdir(source_folder):
+            self.source_folder = source_folder
+            self.image_list = [os.path.join(source_folder, i) for i in os.listdir(source_folder) if
+                               i.lower().endswith(self.image_type)]
+        elif os.path.isfile(source_folder):
+            self.source_folder = os.path.dirname(source_folder)
+            self.image_list = [source_folder]
+
+        self.n_points = len(label_names)
+
+        # where to store the labels
+        if output_folder is not None:
+            self.output_folder = output_folder
+        if output_folder is None:
+            self.output_folder = source_folder
+
+        # determine if window wil belong to a higher level tk window
+        if toplevel is False:
+            self.window = tk.Tk()
         else:
-            cv2.rectangle(image,(x-3,y-3),
-                          (x+3,y+3),(0, 255, 0))
-            cv2.imshow(window_title, image)
-            point_count+=1
-            
-            stored_xy.append([x,y])
-            
-def overlap_image_labels(image,stored_xy):
-    overlapped_im=image
-    for point in stored_xy:
-        overlapped_im[point[1]-3:point[1]+3,point[0]-3:point[0]+3,0]=0
-        overlapped_im[point[1]-3:point[1]+3,point[0]-3:point[0]+3,1]=255
-        overlapped_im[point[1]-3:point[1]+3,point[0]-3:point[0]+3,2]=0
-    return overlapped_im
-'''
-#############################################################################
-#####################   Press [q] to reset the labels   #####################
-#############################################################################
-#####################   Press [s] to export the labels  #####################
-#############################################################################
-#####################   Press [p] to print the labels   #####################
-#############################################################################
-'''
-stored_xy=[]
-point_count=0
+            self.window = tk.Toplevel()
 
-folder_source = 'images\\' # location of images to be labeled
-output_folder = 'images\\' # where to store the labels 
+        # get label names list
+        self.label_names = label_names
 
-global_image_list=glob.glob(folder_source+'*.png') # Generating the list of images to be labeled
-# change the '.jpg' extension if other image types are used...
+        # dictionary that holds the label name: [x, y] points for each image. Is cleared with a new image
+        self.stored_xy = {}
 
-image_name=''
+        # dictionary that holds the image name: stored_xy dictionary for each folder. Is cleared after each folder
+        # is completed and saved to a csv or xml file
+        self.image_points_dict = {}
 
-fig = plt.figure()
-plt.ion()
-for (image_nr,image_path) in enumerate(global_image_list):
-     window_title='image'
-                 
-     if image_nr<0: # In case the previous labeling session was suddenly stopped. It basically overlooks all previous images
-         pass
-     else:
-         image_original = cv2.imread(image_path,cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR) # read the image having the orientation it was saved with, otherwise its rotation is reset
-         length_orig,width_orig,dim=np.shape(image_original) # image width, length and dimensions
-         
-         image = cv2.resize(image_original,(256*4,160*4)) # resizin the image to something that can fit easily on the screen
-         
-         length,width,dim=np.shape(image)
-         clone = image.copy() # the initial image is stored, just in case
-         cv2.namedWindow(window_title)
-         cv2.setMouseCallback(window_title, click_and_crop)
-         
-         
-    # keep looping until the 's' key is pressed
-         while True:
-    # display the image and wait for a keypress
-             cv2.imshow(window_title, image)
-             key = cv2.waitKey(1) & 0xFF
-    # if the 'q' key is pressed, reset the labels
-             if key == ord("q"):
-                 image = clone.copy()
-                 stored_xy=[]
-                 point_count=0
-    # if the 's' key is pressed, break from the loop
-             elif key == ord("s"):
-                 overlapped_image=overlap_image_labels(image,stored_xy)
-                 
-                 stored_xy=np.array(stored_xy,dtype=np.float)
-                 stored_xy[:,0]=stored_xy[:,0]/width
-                 stored_xy[:,1]=stored_xy[:,1]/length
-                 
-                 stored_xy=np.transpose(stored_xy)
-                 
-                 splits=str.split(image_path,'.')
-                 splits_2=str.split(splits[0],'\\')
-                 
-                 fig_name=output_folder+splits_2[1]+'_overlapped.jpg'
-                 
-                 image_name=splits_2[1]
-                 cv2.imwrite(fig_name,overlapped_image)
-                 
-                 plt.imshow(cv2.cvtColor(overlapped_image,cv2.COLOR_BGR2RGB))
-                 plt.title('image:[%s]:' % image_name)
-                 plt.tight_layout()
-                 plt.show()
-                 
-                 xml_name=splits_2[1]+'_coord'
-                 camera_coord_export_as_XML_v3(xml_name,stored_xy,output_folder)
-                 
-                 stored_xy=[]
-                 point_count=0
-                 print ('Created XML for image Nr%d' % image_nr)
-                 break
-    # if the 'p' key is pressed,  print the stored points...
-             elif key == ord("p"): #let's POP the last element in the list!!!
-                 print('points before:')
-                 print(stored_xy)
-                 stored_xy.pop()
-                 point_count-=1
-                 image = overlap_image_labels(clone.copy(),stored_xy)
-                 
-                 print('points after:')
-                 print(stored_xy)
-                 
-                 
-plt.ioff()
-cv2.destroyAllWindows()
+        # image size to be set in canvas
+        self.canvas_w = image_size
+        self.canvas_h = image_size
+
+        # set image as none to be assigned a loaded in instance in methods
+        self.image = None
+        # the photo assigned to the canvas
+        self.photo = self.resize_image()
+
+        # tk window is created out of multiple frames:
+        # image frame is made to the size of the resized image
+        self.image_frame = tk.Frame(self.window, width=self.canvas_w, height=self.canvas_h)
+        # landmark frame will hold radio buttons for each landmark to be labeled
+        self.landmark_frame = tk.Frame(self.window)
+        # button frame holding "next" and "quit" buttons
+        self.button_frame = tk.Frame(self.window)
+        # Create a canvas that can fit the given image using adjusted dimensions inside image_frame
+        self.canvas = tk.Canvas(self.image_frame, width=self.canvas_w, height=self.canvas_h)
+        self.canvas.pack(expand=1)
+
+        # Add PhotoImage to the Canvas
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+        # bind click and crop function to mouse click
+        self.canvas.bind('<Button>', self.click_and_crop)
+
+        # create next button
+        button_next = tk.Button(master=self.button_frame, text="Next", command=self.next_button)
+
+        # create quit button
+        button_quit = tk.Button(master=self.button_frame, text="Quit", command=self.window.destroy)
+
+        # create radio buttons and set to first button by default
+        self.radio_int = tk.IntVar()
+        self.radio_int.set(0)
+        for i in range(len(self.label_names)):
+            radio = tk.Radiobutton(self.landmark_frame, text=self.label_names[i], value=i, variable=self.radio_int)
+            radio.configure(fg="black")
+            radio.pack()
+
+        # pack buttons to frame
+        button_next.pack(side=tk.RIGHT)
+        button_quit.pack(side=tk.LEFT)
+        # TODO: add toolbar for zooming
+
+        # pack and create the tk window
+        self.canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=0)
+
+        self.image_frame.pack(side=tk.LEFT)
+        self.landmark_frame.pack(side=tk.RIGHT)
+        self.button_frame.pack(side=tk.BOTTOM)
+        self.window.mainloop()
+
+    def click_and_crop(self, event):
+        # click again after placing last point to continue to next image
+        if len(self.stored_xy.keys()) == len(self.label_names):
+            self.next_button()
+        else:
+            try:
+                # check if point has been labeled before (for relabeling purposes). If so, delete and relabel
+                if self.label_names[self.radio_int.get()] in self.stored_xy.keys():
+                    self.canvas.delete(self.stored_xy[self.label_names[self.radio_int.get()]][1])
+                oval_id = self.canvas.create_oval(event.x - 5, event.y - 5, event.x + 5, event.y + 5, fill="blue",
+                                                  width=20, outline="")
+                self.stored_xy[self.label_names[self.radio_int.get()]] = [(event.x, event.y), oval_id]
+                self.radio_int.set(self.radio_int.get() + 1)
+            #     exception for if it was last point and no label is selected, assumes labeling is complete
+            except IndexError:
+                self.next_button()
+
+    '''function to load in image, resize it to given dimensions, and convert to a PIL image type'''
+
+    def resize_image(self):
+        # get image path from image list based on how many images have been processed
+        image_path = self.image_list[len(self.image_points_dict)]
+        # assign self.image to loaded in image path using openCV
+        try:
+            self.image = cv2.cvtColor(cv2.imread(str(Path(image_path))), cv2.COLOR_BGR2RGB)
+        # error handling for a raw image
+        except cv2.error:
+            raw = rawpy.imread(str(Path(image_path)))
+            img = raw.postprocess()
+            self.image = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
+        # image resolution
+        r = self.image_size / self.image.shape[1]
+        # image dimensions
+        dim = (self.image_size, int(self.image.shape[0] * r))
+        # set canvas dimensions based on image dimensions
+        self.canvas_w = dim[0]
+        self.canvas_h = dim[1]
+        # resize cv2 image
+        resized = cv2.resize(self.image, dim, interpolation=cv2.INTER_AREA)
+        # convert to PIL image so it can be held in tk canvas
+        photo = ImageTk.PhotoImage(image=Image.fromarray(resized))
+        return photo
+
+    '''next button to save x, y points from last image to dictionary and load next image
+    If it's the last image in the folder, saves labels to a csv or xml'''
+
+    def next_button(self):
+        # get keys from label_names that are not in stored_xy keys (skipped labels) and input nan value
+        # store to larger dict with image name as key, stored_xy dictionary as values
+        self.image_points_dict[self.image_list[len(self.image_points_dict)]] = compare_labels(self.label_names,
+                                                                                              self.stored_xy)
+        # check if all images have been analyzed
+        if len(self.image_points_dict) == len(self.image_list):
+            save_csv(self.image_points_dict, self.output_folder)
+            print("Done")
+            self.window.quit()
+        else:
+            print(self.image_points_dict)
+            # resize next image
+            self.photo = self.resize_image()
+            # clear stored_xy points from last image
+            self.stored_xy.clear()
+            # clear canvas
+            self.canvas.delete("all")
+            # configure canvas to new dimensions
+            self.canvas.configure(height=self.canvas_h, width=self.canvas_w)
+            # set image to top left corner
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+            # reset radio int selection variable
+            self.radio_int.set(0)
