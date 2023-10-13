@@ -1,48 +1,30 @@
 ![](https://github.com/AdrianUng/place_labels/blob/master/repo_snap2.png)
 <br/><br/>
-This script is based on a previous post from PyImage Search. You can access the original tutorial here: https://www.pyimagesearch.com/2015/03/09/capturing-mouse-click-events-with-python-and-opencv/
-
+This package is meant to address the need for an image point labeling toolbox that works with tkinter
 ## Packages used:
-- OpenCV version 3.4.0
-- Numpy version 1.14.0
-- Matplotlib version 1.4.3
-- xml
-
-### Script running on Windows, so paths to folders contain '\\' instead of '/' ###
+- OpenCV version 4.8.0.76
+- Numpy version 1.25.2
+- Pandas version 2.1.1
+- Pillow version 10.0.0
+- Matplotlib version 3.7.2
+- rawpy version 0.18.1
 
 ## General description:
 
-Script used to label an image with a finite number of landmarks. The output is an XML script containing the (x,y) coordinates of the points.
+Script used to label an image with a finite number of user defined landmarks. The output is a CSV file containing the (x,y) coordinates of the points and the file path of the labeled image.
 
-The points are successively added in a python list, until the maximum number is reached (in this case 6).
-If a landmark was not placed properly, the list containing the points can be popped (until it is empty) by pressing the 'p' key.
+If a landmark is not placed properly, simply select the name of the landmark and relabel it.
 
-When the user is happy with how the points are placed, the list containing them is fed to a function which normalizes their values (float from 0 to 1) and writes an XML file. Furthermore, a small image is saved in the 'destination folder' to allow the easy inspection of the landmarks later on. 
+If a landmark is not visible, simply skip it.
 
-Green squares of side=6 pixels are displayed centered on the landmark's (x,y) values.
+When the user is happy with how the points are placed, click the "Next" button or simply click the image again to move to the next point. Once all images are labeled a CSV file is automatically saved to the output folder (if not specified, this is the same folder that the images were stored in.
 
-In order to aid the consistent placing of landmarks in a context where this task is very difficult, both cv2.imshow() and plt.imshow() are being used, allowing the user to easily inspect the landmarks from the previous image (as displayed in 'git_screen1.png')
 
-![alt text](https://github.com/AdrianUng/place_labels/blob/master/git_screen1.png)
-
-In order to completely clear the list of landmarks 'q' is pressed.
-
-## Output of script:
-- XML file containing the (x,y) coordinates named 'imageName_coord.xml'
-- JPG file of smaller size displaying both the final orientation of the image, as well as the placed landmarks, named 'imageName_overlapped.jpg'
+## Output of ImageLandmarks class:
+- CSV file containing the (x,y) coordinates named 'labeled_points.csv'
 
 ## Future improvements:
-
-[ ] rotate the image by pressing 'r' and allow the placing of landmarks at the **(x,y)** coordinates regardless of the image's orientation
-
-[ ] change the landmark placing order in order to facilitate the more accurately alignment of the points **#3** to **#6**
-
-[ ] stop the algorithm from exporthing the XML if the list storing the points is empty
-
-[ ] stop the algorithm from poping the list if it is already empty
-
-
-
-
+- Delete a landmark.
+- Specific point colors assigned for each landmark name.
 
 Please notify me if you find this code useful in any way and end up using it in one of your projects! :)
