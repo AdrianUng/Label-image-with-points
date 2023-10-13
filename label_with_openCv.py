@@ -25,8 +25,11 @@ def save_csv(dictionary, save_path):
     df.to_csv(Path(os.path.join(save_path, "labeled_points.csv")))
 
 
-# get keys from label_names that are not in stored_xy keys (skipped labels) and input nan value
 def compare_labels(label_names, stored_labels):
+    # also remove oval_id from dictionary values, leaving only tuple of coordinate points
+    for i in stored_labels.keys():
+        stored_labels[i] = stored_labels[i][0]
+    # get keys from label_names that are not in stored_xy keys (skipped labels) and input nan value
     unlabelled_values = list(set(label_names) - set(stored_labels.keys()))
     for i in unlabelled_values:
         stored_labels[i] = np.nan
@@ -138,16 +141,19 @@ class ImageLandmarks:
             self.next_button()
         else:
             try:
-                self.canvas.create_oval(event.x - 5, event.y - 5, event.x + 5, event.y + 5, fill="blue", width=20,
-                                        outline="")
-                self.stored_xy[self.label_names[self.radio_int.get()]] = event.x, event.y
+                # check if point has been labeled before (for relabeling purposes). If so, delete and relabel
+                if self.label_names[self.radio_int.get()] in self.stored_xy.keys():
+                    self.canvas.delete(self.stored_xy[self.label_names[self.radio_int.get()]][1])
+                oval_id = self.canvas.create_oval(event.x - 5, event.y - 5, event.x + 5, event.y + 5, fill="blue",
+                                                  width=20, outline="")
+                self.stored_xy[self.label_names[self.radio_int.get()]] = [(event.x, event.y), oval_id]
                 self.radio_int.set(self.radio_int.get() + 1)
-                print(self.stored_xy)
             #     exception for if it was last point and no label is selected, assumes labeling is complete
             except IndexError:
                 self.next_button()
 
     '''function to load in image, resize it to given dimensions, and convert to a PIL image type'''
+
     def resize_image(self):
         # get image path from image list based on how many images have been processed
         image_path = self.image_list[len(self.image_points_dict)]
@@ -174,6 +180,7 @@ class ImageLandmarks:
 
     '''next button to save x, y points from last image to dictionary and load next image
     If it's the last image in the folder, saves labels to a csv or xml'''
+
     def next_button(self):
         # get keys from label_names that are not in stored_xy keys (skipped labels) and input nan value
         # store to larger dict with image name as key, stored_xy dictionary as values
@@ -198,3 +205,8 @@ class ImageLandmarks:
             self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
             # reset radio int selection variable
             self.radio_int.set(0)
+
+
+if __name__ == "__main__":
+    ImageLandmarks(source_folder="/Users/brandonhastings/Desktop/modified_images/image/original/VIS/20210624",
+                   label_names=["left eye", "right eye", "neck"], image_type='cr2')
