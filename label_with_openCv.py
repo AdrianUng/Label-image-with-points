@@ -33,9 +33,6 @@ def compare_labels(label_names, stored_labels):
     return dict(sorted(stored_labels.items()))
 
 
-# TODO: check rgb arrays from cvtColor
-
-
 class ImageLandmarks:
     def __init__(self, source_folder, label_names, output_folder=None, image_type=None, toplevel=False,
                  thickness=10, image_size=400):
