@@ -54,7 +54,7 @@ class ImageLandmarks:
         if os.path.isdir(source_folder):
             self.source_folder = source_folder
             self.image_list = [os.path.join(source_folder, i) for i in os.listdir(source_folder) if
-                               i.lower().endswith(self.image_type)][:3]
+                               i.lower().endswith(self.image_type)]
         elif os.path.isfile(source_folder):
             self.source_folder = os.path.dirname(source_folder)
             self.image_list = [source_folder]
@@ -205,8 +205,3 @@ class ImageLandmarks:
             self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
             # reset radio int selection variable
             self.radio_int.set(0)
-
-
-if __name__ == "__main__":
-    ImageLandmarks(source_folder="/Users/brandonhastings/Desktop/modified_images/image/original/VIS/20210624",
-                   label_names=["left eye", "right eye", "neck"], image_type='cr2')
